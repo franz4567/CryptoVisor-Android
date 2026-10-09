@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp">
+
+    <!-- BARRA DELGADA PRINCIPAL FLOTANTE SOBRE OTRAS APPS -->
+    <LinearLayout
+        android:id="@+id/mainFloatingBar"
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:background="#E608080C"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp">
+
+        <!-- Manija para arrastrar con el dedo -->
+        <TextView
+            android:id="@+id/dragHandle"
+            android:layout_width="20dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="⋮⋮"
+            android:textColor="#71717A"
+            android:textSize="14sp" />
+
+        <!-- Botón Noticias [📰] -->
+        <TextView
+            android:id="@+id/tvOverlayNews"
+            android:layout_width="wrap_content"
+            android:layout_height="26dp"
+            android:background="#18181B"
+            android:gravity="center"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:text="📰"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <!-- Scroll Horizontal con los 8 Tickers -->
+        <HorizontalScrollView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/llTickersContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp" />
+        </HorizontalScrollView>
+
+        <!-- Botón Cerrar [✕] -->
+        <TextView
+            android:id="@+id/btnOverlayClose"
+            android:layout_width="24dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="✕"
+            android:textColor="#71717A"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- TARJETA TOAST MEGA SHOCK FLOTANTE SUPERPUESTA -->
+    <LinearLayout
+        android:id="@+id/megaShockToastLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:background="#F07F1D1D"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvMegaShockType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#DC2626"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:text="💥 MEGA DUMP"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvMegaShockSymbol"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="BTC"
+                android:textColor="#FEF08A"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnCloseMegaToast"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="4dp"
+                android:text="✕"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvMegaShockTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Noticia urgente macroeconómica o conflicto detectado"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tvMegaShockMetrics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="-2.4% | Vol: 3.5x"
+            android:textColor="#FECACA"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</LinearLayout>
