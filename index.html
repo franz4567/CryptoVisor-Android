@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Crypto Visor PRO V2 - Android</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#050505">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CryptoVisor">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%2310b981'/><text y='.9em' x='50%' text-anchor='middle' font-size='65' font-weight='bold' fill='white'>₿</text></svg>">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#050505',
+                        cardBg: '#121215',
+                        cardBorder: '#232328',
+                        accentGreen: '#22c55e',
+                        accentRed: '#ef4444',
+                        accentBlue: '#3b82f6',
+                        accentYellow: '#eab308',
+                        vixGreenBg: '#064e3b',
+                        vixGreenFg: '#4ade80',
+                        vixRecentBg: '#14532d',
+                        vixRecentFg: '#86efac',
+                        emaBlueBg: '#1e3a8a',
+                        emaBlueFg: '#60a5fa'
+                    },
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'Roboto Mono', 'SF Mono', 'monospace'],
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slight': 'bounce 1s infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #050505;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            padding-top: env(safe-area-inset-top, 10px);
+        }
+        .font-mono-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 4px;
+        }
+        .glass-card {
+            background: rgba(18, 18, 22, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        @keyframes urgentBlink {
+            0%, 100% { background-color: #7f1d1d; border-color: #ef4444; color: #fecaca; }
+            50% { background-color: #ef4444; border-color: #fee2e2; color: #ffffff; }
+        }
+        .urgent-active {
+            animation: urgentBlink 0.9s infinite alternate;
+        }
+        @keyframes megaShockPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .mega-shock-toast {
+            animation: megaShockPulse 1.2s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- BARRA SUPERIOR DE CONTROL / HEADER -->
+    <header class="sticky top-0 z-40 bg-[#070709]/95 backdrop-blur border-b border-zinc-800/80 px-3 py-2">
+        <div class="max-w-md mx-auto flex items-center justify-between gap-2">
+            <!-- Brand & Status -->
+            <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 bg-zinc-900/80 px-2 py-1 rounded-lg border border-zinc-800">
+                    <span id="wsStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-500 transition-all duration-300"></span>
+                    <span id="wsStatusText" class="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400">Iniciando</span>
+                </div>
+                <!-- Timeframe Selector -->
+                <select id="selectTimeframe" class="bg-zinc-900 text-xs font-mono font-bold text-zinc-300 rounded-lg px-2 py-1 border border-zinc-800 focus:outline-none focus:border-blue-500">
+                    <option value="1m">1m</option>
+                    <option value="3m" selected>3m</option>
+                    <option value="5m">5m</option>
+                    <option value="15m">15m</option>
+                    <option value="1h">1h</option>
+                </select>
+            </div>
+
+            <!-- View Switcher & Actions -->
+            <div class="flex items-center gap-1.5">
+                <!-- Pantalla Activa (Wake Lock) -->
+                <button id="btnWakeLock" title="Mantener pantalla activa" class="p-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-zinc-400 active:scale-95 transition-all text-xs flex items-center gap-1">
+                    <span id="wakeLockIcon">💡</span>
+                </button>
+
+                <!-- Audio Switch -->
+                <button id="btnSoundMute" title="Activar/Desactivar Sonido" class="p-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-zinc-300 active:scale-95 transition-all text-xs">
+                    <span id="soundIcon">🔊</span>
+                </button>
+
+                <!-- Botón Noticias 📰 -->
+                <button id="btnNews" class="relative px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-semibold text-zinc-300 flex items-center gap-1 active:scale-95 transition-all">
+                    <span>📰</span>
+                    <span id="newsCountdown" class="hidden text-[10px] font-mono bg-red-600 text-white px-1 rounded-full">3m</span>
+                </button>
+
+                <!-- Botón Modo Flotante / Mini -->
+                <button id="btnToggleCompact" title="Cambiar a Modo Compacto Flotante" class="p-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-zinc-300 active:scale-95 transition-all text-xs">
+                    <span id="compactIcon">🪟</span>
+                </button>
+
+                <!-- Botón Ajustes ⚙ -->
+                <button id="btnSettings" class="p-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-zinc-300 active:scale-95 transition-all text-xs">
+                    <span>⚙️</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- BANNER MEGA SHOCK FLOTANTE (TOAST DE MÁXIMA PRIORIDAD) -->
+    <div id="megaShockToast" class="hidden fixed top-16 left-3 right-3 z-50 max-w-md mx-auto glass-card border-2 border-red-500 bg-red-950/90 rounded-2xl p-3 shadow-2xl mega-shock-toast transition-all">
+        <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl animate-bounce">🚨</span>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span id="megaShockType" class="bg-red-600 text-white text-[11px] font-mono font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">💥 MEGA DUMP</span>
+                        <span id="megaShockSymbol" class="text-sm font-black text-yellow-300">BTC</span>
+                    </div>
+                    <p id="megaShockNewsTitle" class="text-xs text-white/90 font-medium line-clamp-2 mt-1 leading-snug">Guerra o decisión macroeconómica de alto impacto detectada</p>
+                </div>
+            </div>
+            <button id="btnCloseMegaShock" class="text-zinc-400 hover:text-white p-1 text-lg">✕</button>
+        </div>
+        <div class="mt-2.5 pt-2 border-t border-red-800/60 flex items-center justify-between text-[11px]">
+            <span id="megaShockMetrics" class="text-red-300 font-mono">-2.4% | Vol: 4.2x</span>
+            <a id="megaShockLink" href="#" target="_blank" class="bg-red-600 hover:bg-red-500 text-white px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 active:scale-95">
+                Leer Noticia ↗
+            </a>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL DE TICKERS -->
+    <main class="flex-1 px-3 py-3 max-w-md mx-auto w-full">
+
+        <!-- MODO DASHBOARD / TARJETAS MÓVILES PRO -->
+        <div id="viewDashboard" class="space-y-2.5">
+            <!-- Dynamic Tickers injected here via JavaScript -->
+            <div id="tickersContainer" class="space-y-2.5">
+                <!-- Skeleton Loader -->
+                <div class="glass-card rounded-2xl p-3.5 border border-zinc-800 animate-pulse flex items-center justify-between">
+                    <div class="h-6 bg-zinc-800 rounded w-20"></div>
+                    <div class="h-6 bg-zinc-800 rounded w-28"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODO BARRA COMPACTA FLOTANTE (ESTILO WINDOWS_V8 PARA VENTANA FLOTANTE DE MAGICOS) -->
+        <div id="viewCompact" class="hidden">
+            <div class="glass-card rounded-xl p-2 border border-zinc-800 overflow-x-auto custom-scroll">
+                <div id="compactTickersRow" class="flex items-center gap-2 whitespace-nowrap min-w-max">
+                    <!-- Tickers in compact row -->
+                </div>
+            </div>
+            <p class="text-[11px] text-zinc-500 text-center mt-2">
+                Tip: Abre esta vista dentro de la <strong>Ventana Flotante de MagicOS</strong> para tener el visor flotando sobre Binance o TradingView.
+            </p>
+        </div>
+    </main>
+
+    <!-- FOOTER INFORMACIÓN -->
+    <footer class="text-center py-2 px-3 text-[10px] text-zinc-600 border-t border-zinc-900 max-w-md mx-auto w-full flex items-center justify-between">
+        <span id="lastUpdated">Actualizando...</span>
+        <span>Honor Magic6 Lite Edition</span>
+        <button id="btnAudioTestPrompt" class="text-blue-500 hover:underline">Habilitar Audio</button>
+    </footer>
+
+    <!-- MODAL DE NOTICIAS ORDENADAS CRONOLÓGICAMENTE (<2H) -->
+    <div id="modalNews" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-[#0e0e12] border border-zinc-800 rounded-t-3xl sm:rounded-2xl max-w-md w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-slide-up">
+            <!-- Header Modal -->
+            <div class="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/60">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">📰</span>
+                    <div>
+                        <h2 class="text-sm font-bold text-zinc-100">Noticias de Alto Impacto</h2>
+                        <p class="text-[10px] text-zinc-400">Orden cronológico estricto &bull; Fuentes verificadas</p>
+                    </div>
+                </div>
+                <button id="btnCloseNewsModal" class="text-zinc-400 hover:text-white p-1 text-lg">✕</button>
+            </div>
+            <!-- News List -->
+            <div id="newsListContainer" class="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scroll">
+                <div class="text-center py-8 text-zinc-500 text-xs">Cargando noticias en tiempo real...</div>
+            </div>
+            <!-- Footer Modal -->
+            <div class="p-3 border-t border-zinc-800 bg-zinc-900/40 flex items-center justify-between">
+                <button id="btnRefreshNews" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
+                    🔄 Actualizar Noticias
+                </button>
+                <span id="newsTotalCount" class="text-[11px] text-zinc-400">0 noticias</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE AJUSTES & CENTRO DE SIMULACIÓN -->
+    <div id="modalSettings" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-[#0e0e12] border border-zinc-800 rounded-t-3xl sm:rounded-2xl max-w-md w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+            <!-- Header Modal -->
+            <div class="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/60">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">⚙️</span>
+                    <div>
+                        <h2 class="text-sm font-bold text-zinc-100">Ajustes & Simulación</h2>
+                        <p class="text-[10px] text-zinc-400">Configuración técnica y pruebas sonoras</p>
+                    </div>
+                </div>
+                <button id="btnCloseSettingsModal" class="text-zinc-400 hover:text-white p-1 text-lg">✕</button>
+            </div>
+
+            <!-- Content Tabs -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scroll">
+
+                <!-- SECCIÓN 1: CENTRO DE SIMULACIÓN EN VIVO -->
+                <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3">
+                    <h3 class="text-xs font-bold text-yellow-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <span>🎮</span> Centro de Simulación (Probar en Celular)
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <button id="simMegaShock" class="bg-red-950/80 hover:bg-red-900 border border-red-700 text-red-200 p-2 rounded-lg font-semibold active:scale-95 transition-all text-left">
+                            🚨 Probar MEGA SHOCK
+                        </button>
+                        <button id="simUrgentNews" class="bg-orange-950/80 hover:bg-orange-900 border border-orange-700 text-orange-200 p-2 rounded-lg font-semibold active:scale-95 transition-all text-left">
+                            📰 Probar Noticia Urgente
+                        </button>
+                        <button id="simFlashDump" class="bg-zinc-800 hover:bg-zinc-700 border border-red-800/80 text-red-300 p-2 rounded-lg font-semibold active:scale-95 transition-all text-left">
+                            📉 Probar Flash Dump
+                        </button>
+                        <button id="simFlashPump" class="bg-zinc-800 hover:bg-zinc-700 border border-emerald-800/80 text-emerald-300 p-2 rounded-lg font-semibold active:scale-95 transition-all text-left">
+                            🚀 Probar Flash Pump
+                        </button>
+                        <button id="simConfluence" class="col-span-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 p-2 rounded-lg font-semibold active:scale-95 transition-all text-center">
+                            ✨ Probar Alarma Confluencia V+F+E
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: PARÁMETROS FLASH SHOCK -->
+                <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3 space-y-3">
+                    <h3 class="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>⚡</span> Parámetros Flash Shock (PUMP/DUMP)
+                    </h3>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-zinc-400">Variación Mínima (%)</span>
+                        <input id="cfgShockThreshold" type="number" step="0.1" value="1.5" class="w-20 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-right text-zinc-100 font-mono">
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-zinc-400">Multiplicador Volumen</span>
+                        <input id="cfgShockVolMult" type="number" step="0.1" value="2.5" class="w-20 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-right text-zinc-100 font-mono">
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-zinc-400">Vibración Háptica (Celular)</span>
+                        <input id="cfgVibration" type="checkbox" checked class="w-4 h-4 accent-blue-600 rounded">
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: TICKERS CONFIGURADOS -->
+                <div class="bg-zinc-900/70 border border-zinc-800 rounded-xl p-3 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-zinc-300 uppercase tracking-wider">🪙 Tickers Activos (8)</h3>
+                        <button id="btnResetTickers" class="text-[10px] text-zinc-400 hover:text-white underline">Restablecer 8 por defecto</button>
+                    </div>
+                    <div id="tickersConfigList" class="space-y-1.5 max-h-40 overflow-y-auto custom-scroll pr-1 text-xs">
+                        <!-- Listed tickers -->
+                    </div>
+                    <div class="flex gap-1.5 pt-2">
+                        <input id="inputNewSymbol" type="text" placeholder="Ej: XRP" class="w-20 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-100 uppercase">
+                        <input id="inputNewPair" type="text" placeholder="xrpusdt" class="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-100 lowercase">
+                        <input id="inputNewDecimals" type="number" value="4" class="w-12 bg-zinc-800 border border-zinc-700 rounded px-1 py-1 text-xs text-center text-zinc-100">
+                        <button id="btnAddTicker" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold active:scale-95">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="p-3 border-t border-zinc-800 bg-zinc-900/40 flex justify-end gap-2">
+                <button id="btnSaveSettings" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-95 transition-all">
+                    Guardar y Aplicar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script principal -->
+    <script src="app.js"></script>
+    <script>
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration error:', err));
+            });
+        }
+    </script>
+</body>
+</html>
